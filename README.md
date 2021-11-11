@@ -5,4 +5,4 @@ Team members:
 Zhenya Ma, 
 Hongkai Chen, 
 Junchen Bao, 
-Haozhe Luo, 
+Haozhe Luo
