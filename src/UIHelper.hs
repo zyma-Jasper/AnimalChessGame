@@ -28,7 +28,7 @@ printTile t = case t of
  Nothing -> " "
 
 --- Game definitions: --
-data Player = Red | Blue deriving (Eq, Show)
+data Player = Red | Blue | Unknown deriving (Eq, Show)
 -- Game State:
 data Game = Game
   { _grid  :: Grid
