@@ -3,8 +3,8 @@ getCurrentMap
 -- return value is  ([[String]], [[UI.Helperer]] ), return the current display and player map.
 
 
-SelectRequest :: Int->Int->UIHelper.Player->Bool
-SelectRequest x y player = True
+selectRequest :: Int->Int->UIHelper.Player->Bool
+selectRequest x y player = True
 --- @Description: UI will send a request to select one grid, return whether the player can select this grid.
 --- @Param: x,y : the grid point(x,y from {0,1,2,3}), player: the current player 
 --- @Return: True if the player can choose the grid for further operation, False if the play can't select this grid.
@@ -44,6 +44,10 @@ sendMoveRequest :: Int->Int->Int->Int->UIHelper.Player->(Bool,[[String]], [[UIHe
 sendMoveRequest x_old y_old x_new y_new player = (True, 4*4 String Map, 4*4 Player Map)
 --- Note: this is for both move and eat action
 
+gameIsOver :: (Bool,UIHelper.Player)
+--- Note: return a tuple. The first elem is True(game over)/ False. Second elem is the winner(UIHelper.Red/UIHelper.Blue) if the game is over and there is a winner. Second elem will be UIHelper.Unknown either game is over but no winner(draw) or game is not over.
 
 
 ```
+
+

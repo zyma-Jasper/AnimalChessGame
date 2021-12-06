@@ -35,6 +35,7 @@ data Game = Game
   , _score :: Int
   , _done  :: Bool
   , _cursor:: [[Bool]]
+  ,_playerMap ::[[UIHelper.Player]]
   , _selected :: Bool
   ,_cursorx :: Int
   ,_cursory :: Int 
@@ -63,6 +64,12 @@ initGame = do
                     [False, False, False, False],
                     [False, False, False, False],
                     [False, False, False, False]]
+        ,_playerMap = [
+                        [UIHelper.Unknown, UIHelper.Unknown, UIHelper.Unknown,UIHelper.Unknown],
+                        [UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown],
+                        [UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown],
+                        [UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown]
+                    ]
         ,_cursorx = 0
         ,_cursory = 0
         ,_selected = False

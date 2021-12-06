@@ -1,3 +1,9 @@
+# usage
+```
+stack setup
+stack build BeastChess
+stack exec BeastChess
+```
 # CSE230FA21PJ-Proposal
 Team members:
 Zhenya Ma, 
