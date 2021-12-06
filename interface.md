@@ -1,4 +1,8 @@
 ```Haskell
+getCurrentMap
+-- return value is  ([[String]], [[UI.helper]] ), return the current display and player map.
+
+
 SelectRequest :: Int->Int->UIHelp.Player->Bool
 SelectRequest x y player = True
 --- @Description: UI will send a request to select one grid, return whether the player can select this grid.
