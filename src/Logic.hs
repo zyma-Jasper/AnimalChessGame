@@ -46,14 +46,22 @@ eat (r1,c1) (r2,c2) m = do
                 then do
                     let temchess = update t1 (r2,c2) m
                     update 0 (r1,c1) temchess
-            else m
+            else if ((t2 == 8) && ((tem == 1) || (tem == 2)))
+                then do
+                    let temchess = update t1 (r2,c2) m
+                    update 0 (r1,c1) temchess
+                else m
         else do
             let tem = t2 - 8
             if tem < t1
                 then do
                     let temchess = update t1 (r2,c2) m
                     update 0 (r1,c1) temchess
-            else m
+            else if ((tem == 8) && ((t1 == 1) || (t1 == 2)))
+                then do
+                    let temchess = update t1 (r2,c2) m
+                    update 0 (r1,c1) temchess
+                else m
 
 
 someFunc :: IO ()
