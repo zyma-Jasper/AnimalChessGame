@@ -27,6 +27,7 @@ executable BeastChess
                      , linear       >= 1.20.6 && < 1.21
                      , random       >= 1.1 && < 2
                      , vty
+                     , matrix
 
 test-suite BeastChess-test
   type:                 exitcode-stdio-1.0
