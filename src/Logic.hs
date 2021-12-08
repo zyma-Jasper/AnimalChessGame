@@ -1,7 +1,8 @@
-
 module Logic (initRandomMap, sendFlipRequest,selectRequest, sendMoveRequest) where
+import Data.List
 import Data.Matrix
 import Data.Ord
+import System.Random
 import UIHelper
   (Game(..),Direction(..), Grid, Tile, printTile, initGame, updateList, red, blue, unknown)
 
@@ -10,33 +11,62 @@ import UIHelper
 
 ---- Helper function in the Logic.hs
 
+-- >>> randomR (0,10) (mkStdGen 1)
+-- (10,80028 40692)
+--
+
+-- >>> genRandomMap' [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16] 16 (mkStdGen 1)
+-- [-8,-2,-16,-12,-14,-10,-6,-3,-9,-15,-7,-1,-11,-5,-4,-13]
+--
+
+-- >>> genRandomPlayerMap (genRandomMap [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16] 16 (mkStdGen 1))
+-- [1,1,-1,-1,-1,-1,1,1,-1,-1,1,1,-1,1,1,-1]
+--
+genRandomPlayerMap [] = []
+genRandomPlayerMap l = 
+    if head l < -8 then
+        (UIHelper.blue : (genRandomPlayerMap (tail l)))
+    else (UIHelper.red : (genRandomPlayerMap (tail l)))
 
 
+genRandomMap' _ 0 _ = []
+genRandomMap' l n g = (num:(genRandomMap' l1 (n-1) g1)) where
+    t = (randomR (0, (length l) - 1) g)
+    g1 = snd t
+    num = l !! (fst t)
+    l1 = delete num l
 
+genRandomMap l = map f l where
+    f = \x -> 
+        if x < -8 then
+            x + 8
+        else x
 
+gameOver l = 
+    if elem 1 l1 && not (elem (-1) l1) then
+        1
+    else if elem (-1) l1 && not (elem 1 l1) then
+        -1
+    else 0 
+    where
+        l1 = concat l
 
 ---Interface implementation
 initRandomMap :: Game
 initRandomMap  = 
     Game { 
-          _grid = [
-                        [-2, -1, -1, -7],
-                        [-8, -4, -3, -5],
-                        [-7, -6, -5, -3],
-                        [-6, -8, -4, -2]
-                    ]
+          _grid = toLists (fromList 4 4 (genRandomMap (genRandomMap' 
+                    [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16] 
+                    16 (mkStdGen 1))))
         , _score = 0
         , _done = False
         ,_cursor = [[True, False, False, False],
                     [False, False, False, False],
                     [False, False, False, False],
                     [False, False, False, False]]
-        ,_playerMap = [
-                            [UIHelper.red, UIHelper.blue, UIHelper.red, UIHelper.blue],
-                            [UIHelper.red, UIHelper.blue, UIHelper.red, UIHelper.blue],
-                            [UIHelper.red, UIHelper.blue, UIHelper.red, UIHelper.blue],
-                            [UIHelper.red, UIHelper.blue, UIHelper.red, UIHelper.blue]
-                        ]
+        ,_playerMap = toLists (fromList 4 4 (genRandomPlayerMap (genRandomMap' 
+                    [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16] 
+                    16 (mkStdGen 1))))
         ,_cursorx = 0
         ,_cursory = 0
         ,_selected = False
