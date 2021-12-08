@@ -349,7 +349,27 @@ handleEvent g _                                     = continue g
 -- Drawing
 drawUI :: Game -> [Widget Name]
 drawUI g =
-  [ C.center $ padRight (Pad 4) (drawStats g) <+> drawGrid g <+> padLeft (Pad 4) drawInfo]
+  [ C.center $ padRight (Pad 4) (drawStats g) <+> drawGrid g <+> padLeft (Pad 4) drawCommandRule]
+
+drawCommandRule :: Widget Name
+drawCommandRule = hLimit 29
+  $ vBox [drawInfo, padTop (Pad 1) $ drawRule]
+
+drawRule :: Widget Name
+drawRule = withBorderStyle BS.unicodeBold
+  $ hLimit 29
+  $ B.borderWithLabel (str "Game Rule")
+  $ vBox $ map drawR
+  $ [ "The value of the beast is"
+    , "elephant > lion > tiger >"
+    , "cheetah > dog > cat > rat"
+    , "> ant."
+    , " "
+    , "However, both rat and ant"
+    , "can eat elephant."
+    ]
+  where
+    drawR rule = (padRight Max $ padLeft (Pad 1) $ padRight (Pad 1) $ str rule)
 
 drawInfo :: Widget Name
 drawInfo = withBorderStyle BS.unicodeBold
