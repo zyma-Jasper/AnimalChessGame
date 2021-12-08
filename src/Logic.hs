@@ -107,7 +107,7 @@ selectRequest x y g = do
 
 isBigger :: Int->Int->Bool
 isBigger x y = case x of
-    8 ->  (y>=3) && (y<=7)
+    8 ->  (y>=1) && (y<=7)
     1 ->  (y==8)
     2->  (y==8) || (y==1)
     _ -> (x>y)
