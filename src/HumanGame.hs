@@ -2,8 +2,10 @@
 module HumanGame (humanPlayer, Tick, Name, drawUI, theMap, move, initGame) where
 
 import UIHelper
-  (Game(..), Direction(..), Grid, Tile,Player(..), printTile, initGame)
+  (Game(..),Direction(..), Grid, Tile, printTile, initGame, updateList, red, blue, unknown)
 
+import Logic
+  (initRandomMap, sendFlipRequest, selectRequest, sendMoveRequest)
 import Data.Maybe
 import Data.List
 import Prelude
@@ -56,47 +58,49 @@ bgreenBg = attrName "bgreenBg"
 whiteBg = attrName "whiteBg"
 
 
-fst3 :: (Bool, [[String]], [[UIHelper.Player]]) -> Bool
+fst3 :: (Bool, [[Int]], [[Int]]) -> Bool
 fst3 (x1, x2, x3) = x1
 
-snd3 :: (Bool, [[String]], [[UIHelper.Player]]) -> [[String]]
+snd3 :: (Bool, [[Int]], [[Int]]) -> [[Int]]
 snd3 (x1, x2, x3) = x2
 
-thd3 :: (Bool, [[String]], [[UIHelper.Player]]) -> [[UIHelper.Player]]
+thd3 :: (Bool, [[Int]], [[Int]]) -> [[Int]]
 thd3 (x1, x2, x3) = x3
 
-_fst3 :: (Tile, Bool, UIHelper.Player) -> Tile
+_fst3 :: (Tile, Bool, Int) -> Tile
 _fst3 (x1, x2, x3) = x1
 
-_snd3 :: (Tile, Bool, UIHelper.Player) -> Bool
+_snd3 :: (Tile, Bool, Int) -> Bool
 _snd3 (x1, x2, x3) = x2
 
-_thd3 :: (Tile, Bool, UIHelper.Player) -> UIHelper.Player
+_thd3 :: (Tile, Bool, Int) -> Int
 _thd3 (x1, x2, x3) = x3
 
-_fst3_ :: ([Tile], [Bool], [UIHelper.Player]) -> [Tile]
+_fst3_ :: ([Tile], [Bool], [Int]) -> [Tile]
 _fst3_ (x1, x2, x3) = x1
 
-_snd3_ :: ([Tile], [Bool], [UIHelper.Player]) -> [Bool]
+_snd3_ :: ([Tile], [Bool], [Int]) -> [Bool]
 _snd3_ (x1, x2, x3) = x2
 
-_thd3_ :: ([Tile], [Bool], [UIHelper.Player]) -> [UIHelper.Player]
+_thd3_ :: ([Tile], [Bool], [Int]) -> [Int]
 _thd3_ (x1, x2, x3) = x3
 
-rotatePlayer :: UIHelper.Player->UIHelper.Player
-rotatePlayer p =
-  case p of 
-    UIHelper.Red ->  UIHelper.Blue
-    UIHelper.Blue -> UIHelper.Red
+rotatePlayer :: Int->Int
+rotatePlayer p = (-p)
 
-stringToTile :: [[String]] -> [[Tile]]
-stringToTile ss = ss--[[Just t|t<-r]| r<-ss]
 
-playerColor :: UIHelper.Player -> AttrName
-playerColor p = case p of
-  UIHelper.Red -> redBg
-  UIHelper.Blue -> brblBg
-  UIHelper.Unknown -> whiteBg
+
+
+
+playerColor :: Int -> Int -> AttrName
+playerColor p v = do
+  if v<0 
+    then whiteBg
+  else
+    case p of
+      1 -> redBg
+      -1 -> brblBg
+      _ -> whiteBg
   
 
 theMap :: AttrMap
@@ -133,11 +137,12 @@ humanPlayer = do
   forkIO $ forever $ do --- while(true)
     writeBChan chan Tick
     threadDelay 100000 -- decides how fast your game moves
-  g <- initGame
+  let gs = initRandomMap
+  g <- (initGame gs)
   void $ customMain (V.mkVty V.defaultConfig) (Just chan) app g
 
-gameIsOver :: (Bool,UIHelper.Player)
-gameIsOver = (False, UIHelper.Unknown)
+gameIsOver :: (Bool,Int)
+gameIsOver = (False, UIHelper.unknown)
 
 isGameOver :: Game -> Bool
 isGameOver g = fst gameIsOver
@@ -182,8 +187,7 @@ newCursorMap x y =
         2 ->[[False,False,False,False],[False,False,False,False],[False,False,False,False],[False,False,True,False]]
         3 ->[[False,False,False,False],[False,False,False,False],[False,False,False,False],[False,False,False,True]]
 
-selectRequest :: Int->Int->UIHelper.Player->Bool
-selectRequest x y player = True
+
 
 selectLeft :: Game->Game
 selectLeft  g = 
@@ -220,71 +224,66 @@ selectUp  g =
 
 
 
-sendMoveRequest :: Int->Int->Int->Int->UIHelper.Player->(Bool,[[String]], [[UIHelper.Player]])
-sendMoveRequest x_old y_old x_new y_new player = (True, [["?", "?", "ant", "?"],["?", "?", "?", "?"],["?", "?", "?", "?"],["?", "?", "?", "?"]], [[UIHelper.Unknown, UIHelper.Unknown, UIHelper.Red, UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown]])
+
 
 
 moveLeft :: Game->Game
 moveLeft  g = 
   case legal of 
       False -> g
-      True -> g{_selected = False, _player = rotatePlayer (_player g), _playerMap = new_player_map, _grid = new_display_map, _cursory=new_y, _cursor=cursor_map}
+      True -> new_g{ _cursory=new_y, _cursor=cursor_map}
       where
           x = _cursorx g 
           y = _cursory g
           new_y = max (y-1) 0
           cursor_map = newCursorMap x new_y
-          retv = sendMoveRequest x y x (y-1) (_player g)
-          legal = fst3 retv
-          new_display_map = stringToTile (snd3 retv)
-          new_player_map = thd3 retv
+          retv = sendMoveRequest (x,y) (x,(y-1)) g
+          legal = fst retv
+          new_g = snd retv
 
 moveRight :: Game->Game
 moveRight  g =     
     case legal of 
       False -> g
-      True -> g{_selected = False, _player = rotatePlayer (_player g), _playerMap = new_player_map, _grid = new_display_map, _cursory=new_y, _cursor=cursor_map}
+      True -> new_g{ _cursory=new_y, _cursor=cursor_map}
       where
           x = _cursorx g 
           y = _cursory g
           new_y = min (y+1) 3
           cursor_map = newCursorMap x new_y
-          retv = sendMoveRequest x y x (y+1) (_player g)
-          legal = fst3 retv
-          new_display_map = stringToTile (snd3 retv)
-          new_player_map = thd3 retv
+          retv = sendMoveRequest (x,y) (x,(y+1)) g
+          legal = fst retv
+          new_g = snd retv
     
 
 moveDown:: Game->Game
 moveDown  g = 
    case legal of 
     False -> g
-    True -> g{_selected = False, _player = rotatePlayer (_player g), _playerMap = new_player_map, _grid = new_display_map, _cursorx=new_x, _cursor=cursor_map}
+    True -> new_g{_cursorx=new_x, _cursor=cursor_map}
     where
         x = _cursorx g 
         y = _cursory g
         new_x = min (x+1) 3
         cursor_map = newCursorMap new_x y 
-        retv = sendMoveRequest x y (x+1) y (_player g)
-        legal = fst3 retv
-        new_display_map = stringToTile (snd3 retv)
-        new_player_map = thd3 retv
+        retv = sendMoveRequest (x,y) ((x+1), y) g
+        legal = fst retv
+        new_g = snd retv
          
 
 moveUp :: Game->Game
 moveUp  g = 
   case legal of 
    False -> g
-   True -> g{_selected = False, _player = rotatePlayer (_player g), _playerMap = new_player_map, _grid = new_display_map, _cursorx=new_x, _cursor=cursor_map}
+   True -> new_g{_cursorx=new_x, _cursor=cursor_map}
   where
       x = _cursorx g 
       y = _cursory g
       new_x = max (x-1) 0
       cursor_map = newCursorMap new_x y 
-      retv = sendMoveRequest x y (x-1) y (_player g)
-      legal = fst3 retv
-      new_display_map = stringToTile (snd3 retv)
-      new_player_map = thd3 retv
+      retv = sendMoveRequest (x,y) ((x-1),y) g
+      legal = fst retv
+      new_g = snd retv
 
 
 
@@ -316,23 +315,17 @@ selectAndCancel g =
         True -> g{_selected = True} 
         False -> g
         where 
-          legal = selectRequest (_cursorx g) (_cursory g) (_player g)
+          legal = selectRequest (_cursorx g) (_cursory g) g
 
-sendFlipRequest :: Int->Int->UIHelper.Player->(Bool,[[String]], [[UIHelper.Player]])
-sendFlipRequest x y player = (True, [["?", "ant", "?", "?"],["?", "?", "?", "?"],["?", "?", "?", "?"],["?", "?", "?", "?"]], [[UIHelper.Unknown, UIHelper.Red, UIHelper.Unknown,UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown]])
 
 flipChess :: Game->Game
 flipChess g = do
   if (_selected g) == False
     then g
     else do
-      let retv = sendFlipRequest (_cursorx g) (_cursory g) (_player g)
-      let legal = fst3 retv
-      let new_display_map = stringToTile (snd3 retv)
-      let new_player_map = thd3 retv
-      if legal == False
-        then g
-        else g{_selected = False, _player = rotatePlayer (_player g), _playerMap = new_player_map, _grid = new_display_map}
+      let retv = sendFlipRequest (_cursorx g) (_cursory g)  g
+      let legal = fst retv
+      (snd retv)
       
 
 -- input handle
@@ -343,7 +336,7 @@ handleEvent g (VtyEvent (V.EvKey V.KDown []))       = continue $ move UIHelper.D
 handleEvent g (VtyEvent (V.EvKey V.KRight []))      = continue $ move UIHelper.Right g
 handleEvent g (VtyEvent (V.EvKey V.KLeft []))       = continue $ move UIHelper.Left g
 handleEvent g (VtyEvent (V.EvKey (V.KChar 'f') [])) = continue $ flipChess g
-handleEvent g (VtyEvent (V.EvKey (V.KChar 'r') [])) = liftIO (initGame) >>= continue
+handleEvent g (VtyEvent (V.EvKey (V.KChar 'r') [])) = liftIO (initGame gs) >>= continue where gs = initRandomMap 
 handleEvent g (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt g
 handleEvent g (VtyEvent (V.EvKey V.KEsc []))        = halt g
 handleEvent g (VtyEvent (V.EvKey V.KEnter []))        = continue $ selectAndCancel g
@@ -396,13 +389,20 @@ drawStats :: Game -> Widget Name
 drawStats g = hLimit 11
   $ vBox [ drawScore g , padTop (Pad 2) $ drawGameOver (_done g)]
 
+numToPlayer :: Int->String
+numToPlayer x = 
+  case x of
+    1->"Red"
+    -1->"Blue"
+    _->"Error"
+
 drawScore :: Game -> Widget Name
 drawScore g = withBorderStyle BS.unicodeBold
-  $ withAttr (playerColor (_player g))
+  $ withAttr (playerColor (_player g) 0)
   $ B.borderWithLabel (str "Player")
   $ C.hCenter
   $ padAll 1
-  $ str $ show (_player g)
+  $ str $ numToPlayer (_player g)
 
 drawGameOver :: Bool -> Widget Name
 drawGameOver done =
@@ -429,10 +429,10 @@ colorTile val = case val of
 --       True ->  B.borderWithLabel (withAttr magBg $ str "-----")  $ C.hCenter $ padAll 1 $ colorTile $ printTile (fst tp)
 --       False->  B.border $ C.hCenter $ padAll 1 $ colorTile $ printTile (fst tp)
 
-getBorderLabel :: Bool -> UIHelper.Player ->Widget Name
+getBorderLabel :: Bool -> Int ->Widget Name
 getBorderLabel  s p = case s of 
-    True -> if (p == UIHelper.Red) then (withAttr redBg $ str "Select") else (withAttr blueBg $ str "Select")
-    False -> if (p == UIHelper.Red) then (withAttr redBg $ str "----------") else (withAttr blueBg $ str "----------")
+    True -> if (p == UIHelper.red) then (withAttr redBg $ str "Select") else (withAttr blueBg $ str "Select")
+    False -> if (p == UIHelper.red) then (withAttr redBg $ str "----------") else (withAttr blueBg $ str "----------")
     
 drawGrid :: Game -> Widget Name
 drawGrid g = withBorderStyle BS.unicodeBold
@@ -440,5 +440,5 @@ drawGrid g = withBorderStyle BS.unicodeBold
   $ vBox rows
   where
     rows = [hBox $ tilesInRow r (_selected g) (_player g)| t<- (zip3 (_grid g) (_cursor g) (_playerMap g)) , r <- [zip3 (_fst3_ t) (_snd3_ t) (_thd3_ t)] ]
-    tilesInRow row selected player= [hLimit 9 $ withBorderStyle BS.unicodeBold $ withAttr (playerColor (_thd3 tp)) $ (if (_snd3 tp ==False) then  B.border else (B.borderWithLabel $ getBorderLabel selected player) )  $ C.hCenter $ padAll 1 $ colorTile $ printTile (_fst3 tp) | tp <- row]
+    tilesInRow row selected player= [hLimit 9 $ withBorderStyle BS.unicodeBold $ withAttr (playerColor (_thd3 tp) (_fst3 tp)) $ (if (_snd3 tp ==False) then  B.border else (B.borderWithLabel $ getBorderLabel selected player) )  $ C.hCenter $ padAll 1 $ colorTile $ printTile (_fst3 tp) | tp <- row]
 
