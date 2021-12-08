@@ -19,13 +19,11 @@ import qualified Data.Sequence as S
 import Linear.V2 (V2(..), _x, _y)
 import System.Random (Random(..), newStdGen)
 
-type Tile = Maybe String
+type Tile = String
 type Grid = [[Tile]]
 
 printTile :: Tile -> String
-printTile t = case t of
- Just n -> show n
- Nothing -> " "
+printTile t = show t
 
 --- Game definitions: --
 data Player = Red | Blue | Unknown deriving (Eq, Show)
@@ -54,10 +52,10 @@ initGame :: IO Game
 initGame = do
   pure $
     Game { 
-          _grid = [[Just "?",Just "?",Just "?",Just "?"],
-                    [Just "?",Just "?",Just "?",Just "?"],
-                    [Just "?",Just "?",Just "?",Just "?"],
-                    [Just "?",Just "?",Just "?",Just "?"]]
+          _grid = [["?","?","?","?"],
+                    [ "?", "?", "?", "?"],
+                    [ "?", "?", "?", "?"],
+                    [ "?", "?", "?", "?"]]
         , _score = 0
         , _done = False
         ,_cursor = [[True, False, False, False],

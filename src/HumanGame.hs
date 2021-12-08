@@ -90,7 +90,7 @@ rotatePlayer p =
     UIHelper.Blue -> UIHelper.Red
 
 stringToTile :: [[String]] -> [[Tile]]
-stringToTile ss = [[Just t|t<-r]| r<-ss]
+stringToTile ss = ss--[[Just t|t<-r]| r<-ss]
 
 playerColor :: UIHelper.Player -> AttrName
 playerColor p = case p of
@@ -322,15 +322,18 @@ sendFlipRequest :: Int->Int->UIHelper.Player->(Bool,[[String]], [[UIHelper.Playe
 sendFlipRequest x y player = (True, [["?", "ant", "?", "?"],["?", "?", "?", "?"],["?", "?", "?", "?"],["?", "?", "?", "?"]], [[UIHelper.Unknown, UIHelper.Red, UIHelper.Unknown,UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown],[UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown,UIHelper.Unknown]])
 
 flipChess :: Game->Game
-flipChess g = 
- case legal of 
-   False -> g
-   True -> g{_selected = False, _player = rotatePlayer (_player g), _playerMap = new_player_map, _grid = new_display_map}
-  where 
-      retv = sendFlipRequest (_cursorx g) (_cursory g) (_player g)
-      legal = fst3 retv
-      new_display_map = stringToTile (snd3 retv)
-      new_player_map = thd3 retv
+flipChess g = do
+  if (_selected g) == False
+    then g
+    else do
+      let retv = sendFlipRequest (_cursorx g) (_cursory g) (_player g)
+      let legal = fst3 retv
+      let new_display_map = stringToTile (snd3 retv)
+      let new_player_map = thd3 retv
+      if legal == False
+        then g
+        else g{_selected = False, _player = rotatePlayer (_player g), _playerMap = new_player_map, _grid = new_display_map}
+      
 
 -- input handle
 handleEvent :: Game -> BrickEvent Name Tick -> EventM Name (Next Game)
