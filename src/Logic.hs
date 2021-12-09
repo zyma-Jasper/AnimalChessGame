@@ -79,7 +79,8 @@ gameOver l =
 initRandomMap :: Bool -> Game
 initRandomMap  isDemo = 
     let omap =  if isDemo == True
-                    then [-1,-2,-3,-4,-5,-6,-7,-8, -13,-14,-15,-16,-9,-10,-11,-12]
+                    then [-8, -11, -12, -1, -14, -7, -10, -5, -13, -6, -16, -4, -2, -9, -3, -15]
+                    --- [-1,-2,-3,-4,-5,-6,-7,-8, -13,-14,-15,-16,-9,-10,-11,-12] This is for the corner case map
                 else (genRandomMap' [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16] 16 )
     in  Game { 
           _grid = toLists (fromList 4 4 (genRandomMap omap))
