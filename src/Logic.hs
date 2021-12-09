@@ -1,8 +1,9 @@
-module Logic (initRandomMap, sendFlipRequest,selectRequest, sendMoveRequest) where
+module Logic (initRandomMap, sendFlipRequest,selectRequest, sendMoveRequest, isGameOver) where
 import Data.List
 import Data.Matrix
 import Data.Ord
 import System.Random
+import System.IO.Unsafe
 import UIHelper
   (Game(..),Direction(..), Grid, Tile, printTile, initGame, updateList, red, blue, unknown)
 
@@ -29,12 +30,12 @@ genRandomPlayerMap l =
     else (UIHelper.red : (genRandomPlayerMap (tail l)))
 
 
-genRandomMap' _ 0 _ = []
-genRandomMap' l n g = (num:(genRandomMap' l1 (n-1) g1)) where
-    t = (randomR (0, (length l) - 1) g)
-    g1 = snd t
-    num = l !! (fst t)
-    l1 = delete num l
+genRandomMap' _ 0= []
+genRandomMap' l n = do
+    let t = unsafePerformIO $ getStdRandom $ randomR (0, ((length l) - 1))
+    let num = l !! t
+    let l1 = delete num l
+    (num:(genRandomMap' l1 (n-1)))
 
 genRandomMap l = map f l where
     f = \x -> 
@@ -42,35 +43,59 @@ genRandomMap l = map f l where
             x + 8
         else x
 
+
+isGameOver :: Game ->(Bool, Game)
+isGameOver g = do
+    let canFlip = [ ((_grid g)!!r!!c) < 0| r<-[0..3], c<-[0..3]]
+    let idxs = [(r,c) |r<-[0..3], c<-elemIndices (_player g) ((_playerMap g)!!r)]
+    let canUp = [fst (sendMoveRequest v ((fst v)-1, (snd v)) g ) | v<-idxs]
+    let canDown = [fst (sendMoveRequest v ((fst v)+1, (snd v)) g ) | v<-idxs]
+    let canLeft = [fst (sendMoveRequest v ((fst v), (snd v)-1) g ) | v<-idxs]
+    let canRight = [fst (sendMoveRequest v ((fst v), (snd v)+1) g ) | v<-idxs]
+    if (elem True canFlip) || (elem True canUp) ||(elem True canDown) ||(elem True canLeft) || (elem True canRight)
+        then 
+        if (_step g) > 16
+            then (True,g{_done=True, _winner = UIHelper.unknown})
+        else do
+            let winner = gameOver (_playerMap g)
+            if winner /=0 
+                then (True,g{_done=True, _winner = winner})
+            else (False, g)
+    else 
+        (True, g{_done=True, _winner = (-(_player g)) })
+
+
+
 gameOver l = 
     if elem 1 l1 && not (elem (-1) l1) then
-        1
+        UIHelper.red
     else if elem (-1) l1 && not (elem 1 l1) then
-        -1
-    else 0 
+        UIHelper.blue
+    else UIHelper.unknown
     where
         l1 = concat l
 
 ---Interface implementation
-initRandomMap :: Game
-initRandomMap  = 
-    Game { 
-          _grid = toLists (fromList 4 4 (genRandomMap (genRandomMap' 
-                    [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16] 
-                    16 (mkStdGen 1))))
+initRandomMap :: Bool -> Game
+initRandomMap  isDemo = 
+    let omap =  if isDemo == True
+                    then [-1,-2,-3,-4,-5,-6,-7,-8, -13,-14,-15,-16,-9,-10,-11,-12]
+                else (genRandomMap' [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16] 16 )
+    in  Game { 
+          _grid = toLists (fromList 4 4 (genRandomMap omap))
         , _score = 0
         , _done = False
         ,_cursor = [[True, False, False, False],
                     [False, False, False, False],
                     [False, False, False, False],
                     [False, False, False, False]]
-        ,_playerMap = toLists (fromList 4 4 (genRandomPlayerMap (genRandomMap' 
-                    [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16] 
-                    16 (mkStdGen 1))))
+        ,_playerMap = toLists (fromList 4 4 (genRandomPlayerMap omap))
         ,_cursorx = 0
         ,_cursory = 0
         ,_selected = False
         ,_player = UIHelper.red
+        ,_step = 0
+        ,_winner = UIHelper.unknown
         }
     
     
@@ -90,7 +115,8 @@ sendFlipRequest x y g = do
                 then do
                     let new_grid = updateList (-t) (x,y) (_grid g)
                     let new_player = (- (_player g))
-                    (True, g{_grid = new_grid,  _player = new_player, _selected = False})
+                    let s = (_step g)
+                    (True, g{_grid = new_grid,  _player = new_player, _selected = False, _step=s+1})
                 else 
                     (False,g)
 
@@ -107,7 +133,7 @@ selectRequest x y g = do
 
 isBigger :: Int->Int->Bool
 isBigger x y = case x of
-    8 ->  (y>=1) && (y<=7)
+    8 ->  (y>=3) && (y<=7)
     1 ->  (y==8)
     2->  (y==8) || (y==1)
     _ -> (x>y)
@@ -130,7 +156,8 @@ sendMoveRequest (x0,y0) (x1,y1) g = do
                      let grid2 = updateList 0 (x0,y0) grid1 --src=0
                      let playermap1 = updateList src_p (x1,y1) (_playerMap g)
                      let playermap2 = updateList unknown (x0,y0) playermap1
-                     (True, g{_grid = grid2, _playerMap=playermap2, _selected=False, _player = (-p)})
+                     let s = (_step g)
+                     (True, g{_grid = grid2, _playerMap=playermap2, _selected=False, _player = (-p), _step=s+1})
             else (False, g)
 
 

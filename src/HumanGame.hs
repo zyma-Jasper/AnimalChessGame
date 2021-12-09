@@ -5,7 +5,7 @@ import UIHelper
   (Game(..),Direction(..), Grid, Tile, printTile, initGame, updateList, red, blue, unknown)
 
 import Logic
-  (initRandomMap, sendFlipRequest, selectRequest, sendMoveRequest)
+  (initRandomMap, sendFlipRequest, selectRequest, sendMoveRequest, isGameOver)
 import Data.Maybe
 import Data.List
 import Prelude
@@ -100,7 +100,7 @@ playerColor p v = do
     case p of
       1 -> redBg
       -1 -> brblBg
-      _ -> whiteBg
+      _ -> greenBg
   
 
 theMap :: AttrMap
@@ -130,28 +130,21 @@ app = App { appDraw = drawUI
           , appAttrMap = const theMap
           }
 
-humanPlayer :: IO ()
+humanPlayer :: Bool->IO ()
 --- @Description: This is the function that called by the main function.
-humanPlayer = do
+humanPlayer isDemo= do
   chan <- newBChan 10
   forkIO $ forever $ do --- while(true)
     writeBChan chan Tick
     threadDelay 100000 -- decides how fast your game moves
-  let gs = initRandomMap
-  g <- (initGame gs)
+  let g = initRandomMap isDemo
+  g <- (initGame g)
   void $ customMain (V.mkVty V.defaultConfig) (Just chan) app g
 
-gameIsOver :: (Bool,Int)
-gameIsOver = (False, UIHelper.unknown)
 
-isGameOver :: Game -> Bool
-isGameOver g = fst gameIsOver
-  -- (checkFull (_grid g)) && (stuckCheck (_grid g))
 
 step :: Game -> Game
-step g =
-  if isGameOver g then g{_done = True}
-  else g
+step g = snd (isGameOver g)
 
 --- write down the keyboard input logic
 
@@ -288,39 +281,47 @@ moveUp  g =
 
 
 move :: Direction -> Game -> Game
-move dir g = case dir of
-  UIHelper.Up -> 
-    case (_selected g) of
-      True -> moveUp g
-      False -> selectUp g
-  UIHelper.Down -> 
-    case (_selected g) of
-      True -> moveDown g
-      False -> selectDown g
-  UIHelper.Left -> 
-    case (_selected g) of
-      True -> moveLeft g
-      False -> selectLeft g
-  UIHelper.Right -> 
-    case (_selected g) of
-      True -> moveRight g
-      False -> selectRight g
+move dir g = 
+  if (_done g) == False
+    then
+    case dir of
+      UIHelper.Up -> 
+        case (_selected g) of
+          True -> moveUp g
+          False -> selectUp g
+      UIHelper.Down -> 
+        case (_selected g) of
+          True -> moveDown g
+          False -> selectDown g
+      UIHelper.Left -> 
+        case (_selected g) of
+          True -> moveLeft g
+          False -> selectLeft g
+      UIHelper.Right -> 
+        case (_selected g) of
+          True -> moveRight g
+          False -> selectRight g
+    else
+      g
 
 selectAndCancel :: Game->Game
 selectAndCancel g = 
-  case (_selected g) of
-    True -> g{_selected = False} -- cancel the selected grid
-    False -> 
-      case legal of 
-        True -> g{_selected = True} 
-        False -> g
-        where 
-          legal = selectRequest (_cursorx g) (_cursory g) g
+  if (_done g) == False
+    then 
+      case (_selected g) of
+        True -> g{_selected = False} -- cancel the selected grid
+        False -> 
+          case legal of 
+            True -> g{_selected = True} 
+            False -> g
+            where 
+              legal = selectRequest (_cursorx g) (_cursory g) g
+      else g
 
 
 flipChess :: Game->Game
 flipChess g = do
-  if (_selected g) == False
+  if (_selected g) == False || (_done g) == True
     then g
     else do
       let retv = sendFlipRequest (_cursorx g) (_cursory g)  g
@@ -336,7 +337,7 @@ handleEvent g (VtyEvent (V.EvKey V.KDown []))       = continue $ move UIHelper.D
 handleEvent g (VtyEvent (V.EvKey V.KRight []))      = continue $ move UIHelper.Right g
 handleEvent g (VtyEvent (V.EvKey V.KLeft []))       = continue $ move UIHelper.Left g
 handleEvent g (VtyEvent (V.EvKey (V.KChar 'f') [])) = continue $ flipChess g
-handleEvent g (VtyEvent (V.EvKey (V.KChar 'r') [])) = liftIO (initGame gs) >>= continue where gs = initRandomMap 
+handleEvent g (VtyEvent (V.EvKey (V.KChar 'r') [])) = liftIO (initGame gs) >>= continue where gs = initRandomMap False
 handleEvent g (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt g
 handleEvent g (VtyEvent (V.EvKey V.KEsc []))        = halt g
 handleEvent g (VtyEvent (V.EvKey V.KEnter []))        = continue $ selectAndCancel g
@@ -387,28 +388,46 @@ drawInfo = withBorderStyle BS.unicodeBold
 
 drawStats :: Game -> Widget Name
 drawStats g = hLimit 11
-  $ vBox [ drawScore g , padTop (Pad 2) $ drawGameOver (_done g)]
+  $ vBox [ drawScore g , padTop (Pad 2) $ drawGameOver g]
 
 numToPlayer :: Int->String
 numToPlayer x = 
   case x of
     1->"Red"
     -1->"Blue"
-    _->"Error"
+    _->"DRAW"
 
 drawScore :: Game -> Widget Name
-drawScore g = withBorderStyle BS.unicodeBold
-  $ withAttr (playerColor (_player g) 0)
-  $ B.borderWithLabel (str "Player")
-  $ C.hCenter
-  $ padAll 1
-  $ str $ numToPlayer (_player g)
+drawScore g = 
+  if (_done g) == False
+    then
+    withBorderStyle BS.unicodeBold
+    $ withAttr (playerColor (_player g) 0)
+    $ B.borderWithLabel (str "Player")
+    $ C.hCenter
+    $ padAll 1
+    $ str $ numToPlayer (_player g)
+  else emptyWidget
 
-drawGameOver :: Bool -> Widget Name
-drawGameOver done =
-  if done
-    then withAttr gameOverAttr $ C.hCenter $ str "GAME OVER"
-    else emptyWidget
+drawGameOver :: Game -> Widget Name
+drawGameOver g = 
+  if (_done g)
+    then
+      withBorderStyle BS.unicodeBold
+      $ withAttr (playerColor (_winner g) 0)
+      $ B.borderWithLabel (withAttr magBg $ str "Winner")
+      $ C.hCenter
+      $ padAll 1
+      $ str $ numToPlayer (_winner g)
+    else 
+      emptyWidget
+
+
+-- drawGameOver :: Bool -> Widget Name
+-- drawGameOver done =
+--   if done
+--     then withAttr gameOverAttr $ C.hCenter $ str "GAME OVER"
+--     else emptyWidget
 
 colorTile val = case val of
   "2" -> withAttr blueBg $ str val

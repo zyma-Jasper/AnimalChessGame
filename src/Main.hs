@@ -34,10 +34,8 @@ drawInfo = withBorderStyle BS.unicodeBold
   $ vLimit 400
   $ B.borderWithLabel (str "First hit enter. Then type which player you are.")
   $ vBox $ map (uncurry drawKey)
-  $ [ ("h", "Human Player (YOU!)")
-    , ("u", "Up Bot (Always moves up)")
-    , ("r", "Random Bot")
-    , ("m", "monte carlo bot")
+  $ [ ("r", "Random Chess Placement.")
+    , ("d", "Demo Chess Placement.")
     ]
     where
       drawKey act key = (padRight Max $ padLeft (Pad 1) $ str act)
@@ -45,7 +43,8 @@ drawInfo = withBorderStyle BS.unicodeBold
 
 processLine :: String -> IO ()
 processLine s = case s of
-  "h" -> humanPlayer
+  "d" -> humanPlayer True
+  "r" -> humanPlayer False
   --"u" -> botPlayer 1
   -- "m" -> botPlayer2 $ keepTrying [[Just 2, Just 2, Nothing, Nothing],
   --                 [Nothing, Nothing, Nothing, Nothing],
@@ -55,7 +54,6 @@ processLine s = case s of
 
 main :: IO ()
 main = do
-  humanPlayer
-  -- simpleMain drawInfo -- just draw the help menu for choosing human/MC
-  -- c <- getLine
-  -- processLine c
+  simpleMain drawInfo -- just draw the help menu for choosing human/MC
+  c <- getLine
+  processLine c

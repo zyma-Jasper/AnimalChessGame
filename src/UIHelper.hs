@@ -59,6 +59,8 @@ data Game = Game
   ,_cursorx :: Int
   ,_cursory :: Int 
   ,_player :: Int
+  ,_step :: Int
+  ,_winner :: Int
   } deriving (Eq, Show)
 
 data Direction
