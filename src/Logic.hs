@@ -54,7 +54,7 @@ isGameOver g = do
     let canRight = [fst (sendMoveRequest v ((fst v), (snd v)+1) g ) | v<-idxs]
     if (elem True canFlip) || (elem True canUp) ||(elem True canDown) ||(elem True canLeft) || (elem True canRight)
         then 
-        if (_step g) > 16
+        if (_step g) > 200
             then (True,g{_done=True, _winner = UIHelper.unknown})
         else do
             let winner = gameOver (_playerMap g)
