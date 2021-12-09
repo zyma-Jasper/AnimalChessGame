@@ -20,7 +20,7 @@ import Brick
   , customMain, neverShowCursor, attrName
   , continue, halt
   , hLimit, vLimit, vBox, hBox
-  , padRight, padLeft, padTop, padAll, Padding(..)
+  , padRight, padLeft, padTop, padAll, padLeftRight, padTopBottom, Padding(..)
   , withBorderStyle
   , str
   , attrMap, withAttr, emptyWidget, AttrName, on, fg
@@ -459,5 +459,4 @@ drawGrid g = withBorderStyle BS.unicodeBold
   $ vBox rows
   where
     rows = [hBox $ tilesInRow r (_selected g) (_player g)| t<- (zip3 (_grid g) (_cursor g) (_playerMap g)) , r <- [zip3 (_fst3_ t) (_snd3_ t) (_thd3_ t)] ]
-    tilesInRow row selected player= [hLimit 9 $ withBorderStyle BS.unicodeBold $ withAttr (playerColor (_thd3 tp) (_fst3 tp)) $ (if (_snd3 tp ==False) then  B.border else (B.borderWithLabel $ getBorderLabel selected player) )  $ C.hCenter $ padAll 1 $ colorTile $ printTile (_fst3 tp) | tp <- row]
-
+    tilesInRow row selected player= [hLimit 14 $ withBorderStyle BS.unicodeBold $ withAttr (playerColor (_thd3 tp) (_fst3 tp)) $ (if (_snd3 tp ==False) then  B.border else (B.borderWithLabel $ getBorderLabel selected player) )  $ C.hCenter $ padLeftRight 1 $ padTopBottom 2 $ colorTile $ printTile (_fst3 tp) | tp <- row]
