@@ -363,7 +363,8 @@ drawRule = withBorderStyle BS.unicodeBold
     , "> ant."
     , " "
     , "However, both rat and ant"
-    , "can eat elephant."
+    , "can eat elephant. And el-"
+    , "ephant cannot eat them."
     ]
   where
     drawR rule = (padRight Max $ padLeft (Pad 1) $ padRight (Pad 1) $ str rule)
