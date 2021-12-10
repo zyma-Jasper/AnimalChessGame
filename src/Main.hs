@@ -36,6 +36,7 @@ drawInfo = withBorderStyle BS.unicodeBold
   $ vBox $ map (uncurry drawKey)
   $ [ ("r", "Random Chess Placement.")
     , ("d", "Demo Chess Placement.")
+    , ("q", "Exit the Game.")
     ]
     where
       drawKey act key = (padRight Max $ padLeft (Pad 1) $ str act)
@@ -45,6 +46,9 @@ processLine :: String -> IO ()
 processLine s = case s of
   "d" -> humanPlayer True
   "r" -> humanPlayer False
+  "q" -> print "Successfully Exited!"
+  _ -> main
+  
   --"u" -> botPlayer 1
   -- "m" -> botPlayer2 $ keepTrying [[Just 2, Just 2, Nothing, Nothing],
   --                 [Nothing, Nothing, Nothing, Nothing],
