@@ -50,17 +50,16 @@ updateList :: Int->  (Int,Int) -> [[Int]] ->[[Int]]
 updateList new_v (x,y) m = toLists ( setElem new_v ((x+1),(y+1)) (fromLists m) )
 
 data Game = Game
-  { _grid  :: Grid
-  , _score :: Int
-  , _done  :: Bool
-  , _cursor:: [[Bool]]
-  ,_playerMap ::[[Int]]
-  , _selected :: Bool
-  ,_cursorx :: Int
+  { _grid  :: Grid -- ChessMap
+  , _done  :: Bool -- Game is over.
+  , _cursor:: [[Bool]] -- cursor map
+  ,_playerMap ::[[Int]] -- player map
+  , _selected :: Bool -- whether one chess is selected
+  ,_cursorx :: Int -- poistion of the cursor
   ,_cursory :: Int 
-  ,_player :: Int
-  ,_step :: Int
-  ,_winner :: Int
+  ,_player :: Int -- whose turn
+  ,_step :: Int -- how many steps the player has palyed
+  ,_winner :: Int --- game winner
   } deriving (Eq, Show)
 
 data Direction
