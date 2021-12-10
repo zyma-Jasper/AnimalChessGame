@@ -15,8 +15,8 @@ selectRequest :: Int->Int->Game->Bool
 
 sendFlipRequest :: Int->Int->Game->(Bool,Game)
 --- @Description: UI will send a request to flip the chess in the given grid, return whether the user can do this. 
-                  Also return new game state after this action. If the action is not allowed, just return current 
-                  game state. 
+---               Also return new game state after this action. If the action is not allowed, just return current 
+---               game state. 
 --- @Param: Int Int : the grid point(from {0,1,2,3})
 --- @Param: Game: Current game state
 --- @Return: whether the flip action will be allowed and the new game state.
